@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plateforme de Tâches E-commerce - Cloud Supabase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Importation du client Supabase UMD -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = { darkMode: 'media' }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 h-full flex flex-col justify-between overflow-x-hidden transition-colors duration-300">
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- AUTH VIEW -->
+    <div id="auth-view" class="flex-1 flex flex-col justify-center px-6 py-12 max-w-md w-full mx-auto">
+        <div class="text-center mb-6">
+            <div class="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg mb-2 uppercase tracking-wider">
+                Socio patrocinador
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">OFFICIAL SPONSORSHIP, QUALITY ASSURANCE</p>
+            <div class="flex justify-center gap-3 mt-2 text-sm font-bold text-blue-600 dark:text-blue-400">
+                <span class="bg-blue-100 dark:bg-blue-950 px-3 py-1 rounded border border-blue-200 dark:border-blue-800">FLIPKART</span>
+                <span class="bg-blue-100 dark:bg-blue-950 px-3 py-1 rounded border border-blue-200 dark:border-blue-800">INDIAMART</span>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl transition-colors duration-300">
+            <div class="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl mb-6 border border-slate-200 dark:border-slate-800">
+                <button onclick="switchAuthTab('login')" id="tab-login-btn" class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-600 text-white shadow-md">Iniciar sesión</button>
+                <button onclick="switchAuthTab('register')" id="tab-register-btn" class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-slate-500 dark:text-slate-400">registro</button>
+            </div>
+
+            <!-- Register Form -->
+            <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                <h2 class="text-xl font-bold mb-4 text-slate-900 dark:text-white uppercase tracking-wide">registro de cuenta</h2>
+                <div>
+                    <div class="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:border-blue-500">
+                        <i class="fa-solid fa-user text-blue-500 text-xs mr-3"></i>
+                        <input type="text" id="reg-username" required placeholder="Nombre de usuario unique" class="bg-transparent w-full text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <div class="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:border-blue-500">
+                        <i class="fa-solid fa-phone text-blue-500 text-xs mr-3"></i>
+                        <input type="tel" id="reg-phone" required placeholder="Número de teléfono" class="bg-transparent w-full text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <div class="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:border-blue-500">
+                        <i class="fa-solid fa-lock text-blue-500 text-xs mr-3"></i>
+                        <input type="password" id="reg-password" required placeholder="Contraseña secreta" class="bg-transparent w-full text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <div class="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:border-blue-500">
+                        <i class="fa-solid fa-ticket text-blue-500 text-xs mr-3"></i>
+                        <input type="text" id="reg-invite" value="386912" placeholder="Código de invitación" class="bg-transparent w-full text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all text-center">
+                    Crear cuenta y registrarse
+                </button>
+            </form>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <h2 class="text-xl font-bold mb-4 text-slate-900 dark:text-white uppercase tracking-wide">Iniciar sesión</h2>
+                <div>
+                    <div class="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:border-blue-500">
+                        <i class="fa-solid fa-user text-blue-500 text-xs mr-3"></i>
+                        <input type="text" id="log-username" required placeholder="Ingrese su nombre de usuario" class="bg-transparent w-full text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <div class="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:border-blue-500">
+                        <i class="fa-solid fa-lock text-blue-500 text-xs mr-3"></i>
+                        <input type="password" id="log-password" required placeholder="Ingrese su contraseña" class="bg-transparent w-full text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all text-center">
+                    Iniciar sesión
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP VIEW -->
+    <div id="app-view" class="hidden flex-1 flex flex-col max-w-lg w-full mx-auto relative overflow-hidden pb-20">
+        
+        <!-- HEADER TOP BANNER -->
+        <div class="bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:to-indigo-950 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center transition-colors duration-300">
+            <div class="flex items-center gap-2">
+                <span id="header-brand-badge" class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">SHEIN</span>
+                <span id="page-title-display" class="text-sm font-medium text-slate-600 dark:text-slate-300">pagina de inicio</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="top-username" class="text-xs font-semibold text-slate-700 dark:text-slate-300">Utilisateur</span>
+                <button onclick="logout()" class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white" title="Déconnexion"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+
+        <!-- MAIN SCROLLABLE CONTENT AREA -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+
+            <!-- BOUTON SUPERVISEUR TOUT EN HAUT DE L'ÉCRAN -->
+            <div class="w-full">
+                <button onclick="promptAdminAccess()" class="w-full bg-gradient-to-r from-amber-600 via-red-600 to-rose-700 hover:from-amber-500 hover:to-red-600 text-white font-bold p-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-xs uppercase tracking-wider transition-all border border-amber-500/30">
+                    <i class="fa-solid fa-shield-halved text-lg animate-pulse"></i>
+                    <span>PANNEAU SUPERVISEUR & GESTION DES TÂCHES</span>
+                </button>
+            </div>
+
+            <!-- SUPERVISOR PANEL VIEW -->
+            <div id="view-admin" class="space-y-4 hidden">
+                <div class="bg-gradient-to-r from-amber-600 to-red-600 rounded-2xl p-5 shadow-xl text-white space-y-2">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-base font-bold uppercase tracking-wider"><i class="fa-solid fa-shield-halved mr-2"></i> Panneau Superviseur & Admin</h2>
+                        <button onclick="switchTab('inicio')" class="bg-black/30 text-xs px-3 py-1 rounded-lg hover:bg-black/50 font-bold">Fermer</button>
+                    </div>
+                    <p class="text-xs text-amber-100">Supervisez tous les inscrits (synchronisés globalement via Supabase), modifiez leurs soldes et injectez des tâches avec photo.</p>
+                </div>
+
+                <!-- Tabs Admin -->
+                <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold">
+                    <button onclick="switchAdminSubTab('users')" id="admin-subtab-users-btn" class="flex-1 py-2.5 rounded-lg bg-blue-600 text-white transition-all">Utilisateurs inscrits</button>
+                    <button onclick="switchAdminSubTab('tasks')" id="admin-subtab-tasks-btn" class="flex-1 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 transition-all">Attribuer Tâches & Accessoires</button>
+                </div>
+
+                <!-- Subtab 1: Users list -->
+                <div id="admin-subtab-users" class="space-y-3">
+                    <div class="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 px-1">
+                        <span>Liste des comptes enregistrés (Cloud)</span>
+                        <button onclick="renderAdminUsers()" class="text-blue-600 dark:text-blue-400 hover:underline font-bold"><i class="fa-solid fa-rotate mr-1"></i>Actualiser</button>
+                    </div>
+                    <div id="admin-users-list" class="space-y-3"></div>
+                </div>
+
+                <!-- Subtab 2: Custom Tasks Management -->
+                <div id="admin-subtab-tasks" class="space-y-4 hidden">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-lg">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Créer et injecter une tâche personnalisée</h3>
+                        <form onsubmit="adminCreateCustomTask(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="text-slate-600 dark:text-slate-400 block mb-1">Cible (Pseudo exact ou 'ALL' pour tous)</label>
+                                <input type="text" id="adm-task-target" required placeholder="Ex: Moussa ou ALL" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-200 focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-600 dark:text-slate-400 block mb-1">Nom du produit</label>
+                                <input type="text" id="adm-task-name" required placeholder="Ex: Chauffe-eau" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-200 focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-slate-600 dark:text-slate-400 block mb-1">Prix (FCFA)</label>
+                                    <input type="number" id="adm-task-price" required placeholder="Ex: 35000" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-3 text-slate-900 dark:text-slate-200 focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-slate-600 dark:text-slate-400 block mb-1">Revenu / Commission (FCFA)</label>
+                                    <input type="number" id="adm-task-comm" required placeholder="Ex: 2500" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-3 text-slate-900 dark:text-slate-200 focus:outline-none focus:border-blue-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-slate-600 dark:text-slate-400 block mb-1">Photo du produit</label>
+                                <div class="flex items-center gap-3">
+                                    <label class="flex-1 cursor-pointer bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-blue-500 rounded-xl px-4 py-3 text-slate-700 dark:text-slate-300 flex items-center justify-center gap-2 transition-all">
+                                        <i class="fa-solid fa-camera text-blue-500"></i>
+                                        <span id="file-chosen-label">Choisir une photo...</span>
+                                        <input type="file" id="adm-task-file" accept="image/*" onchange="handleAdminFileSelect(event)" class="hidden">
+                                    </label>
+                                </div>
+                                <div id="admin-img-preview-container" class="mt-2 hidden">
+                                    <img id="admin-img-preview" src="" alt="Aperçu" class="w-20 h-20 rounded-xl object-cover border border-slate-300 dark:border-slate-700">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all">
+                                Envoyer la tâche au cloud
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 1: HOME -->
+            <div id="view-inicio" class="space-y-4">
+                <div class="relative bg-gradient-to-r from-purple-900 via-slate-900 to-blue-900 rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 p-6 flex items-center justify-between text-white">
+                    <div>
+                        <h2 class="text-lg font-bold mb-1">Centre commercial</h2>
+                        <p class="text-xs text-slate-200 max-w-[200px]">Maximisez vos gains quotidiens avec nos partenaires e-commerce mondiaux.</p>
+                    </div>
+                    <img src="https://images.unsplash.com/photo-1555529771-835f59fc5efe?auto=format&fit=crop&w=300&q=80" alt="Promo" class="w-24 h-24 rounded-xl shadow-md object-cover">
+                </div>
+
+                <div class="grid grid-cols-4 gap-3 text-center">
+                    <button onclick="switchTab('inicio')" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex flex-col items-center gap-2 shadow-sm">
+                        <div class="w-12 h-12 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-lg"><i class="fa-solid fa-book-open"></i></div>
+                        <span class="text-[11px] text-slate-700 dark:text-slate-300 font-medium">breve introducción</span>
+                    </button>
+                    <button onclick="switchTab('recargar')" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex flex-col items-center gap-2 shadow-sm">
+                        <div class="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center text-lg"><i class="fa-solid fa-wallet"></i></div>
+                        <span class="text-[11px] text-slate-700 dark:text-slate-300 font-medium">Recargar</span>
+                    </button>
+                    <button onclick="switchTab('retiro')" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex flex-col items-center gap-2 shadow-sm">
+                        <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-lg"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                        <span class="text-[11px] text-slate-700 dark:text-slate-300 font-medium">Retiro</span>
+                    </button>
+                    <button onclick="showToast('Lien de parrainage copié !', 'success')" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex flex-col items-center gap-2 shadow-sm">
+                        <div class="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-500 flex items-center justify-center text-lg"><i class="fa-solid fa-envelope"></i></div>
+                        <span class="text-[11px] text-slate-700 dark:text-slate-300 font-medium">Correo</span>
+                    </button>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">información personal</span>
+                        <span class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">LV0</span>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 mb-1 flex items-center justify-between">
+                            <span>Saldo de cuenta</span>
+                            <button onclick="refreshUserData()" class="text-blue-500 hover:underline"><i class="fa-solid fa-rotate"></i></button>
+                        </div>
+                        <div id="user-balance-display" class="text-3xl font-bold text-slate-900 dark:text-white">500.00</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <div>
+                            <div class="text-xs text-slate-500 mb-0.5">Ganancias hoy:</div>
+                            <div id="earnings-today" class="text-sm font-semibold text-slate-800 dark:text-slate-200">0.00</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-500 mb-0.5">Ingresos totales:</div>
+                            <div id="earnings-total" class="text-sm font-semibold text-slate-800 dark:text-slate-200">0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">socio cooperativo</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="selectStore('Amazon')" class="bg-white dark:bg-slate-900 border border-slate-200 hover:border-blue-500 p-4 rounded-xl text-center font-bold text-sm shadow-sm">Amazon</button>
+                        <button onclick="selectStore('Sam\'s Club')" class="bg-white dark:bg-slate-900 border border-slate-200 hover:border-blue-500 p-4 rounded-xl text-center font-bold text-sm shadow-sm">Sam's Club</button>
+                        <button onclick="selectStore('Mercado Libre')" class="bg-white dark:bg-slate-900 border border-slate-200 hover:border-blue-500 p-4 rounded-xl text-center font-bold text-sm shadow-sm">Mercado Libre</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: RECARGAR -->
+            <div id="view-recargar" class="space-y-4 hidden">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-lg">
+                    <h3 class="text-sm font-bold uppercase tracking-wider">Montant de recharge (FCFA / XOF)</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setRechargeAmount(2000)" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 py-3 rounded-xl font-semibold text-sm">2 000</button>
+                        <button onclick="setRechargeAmount(5000)" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 py-3 rounded-xl font-semibold text-sm">5 000</button>
+                        <button onclick="setRechargeAmount(10000)" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 py-3 rounded-xl font-semibold text-sm">10 000</button>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500 block mb-1">Monto personalizado</label>
+                        <input type="number" id="custom-recharge-input" placeholder="Ex: 15000" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500 block mb-1">Code secret de validation de recharge</label>
+                        <input type="password" id="recharge-pass-code" placeholder="Code secret..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <button onclick="confirmRecharge()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg">Confirmar Recarga</button>
+                </div>
+            </div>
+
+            <!-- VIEW 2.5: RETIRO -->
+            <div id="view-retiro" class="space-y-4 hidden">
+                <div class="bg-gradient-to-br from-[#d4af37] via-[#c5a059] to-[#b8860b] text-slate-950 rounded-2xl p-6 shadow-xl space-y-4">
+                    <div>
+                        <div class="text-xs font-semibold tracking-wider mb-1">Saldo disponible</div>
+                        <div id="withdraw-saldo-display" class="text-3xl font-extrabold">0.00</div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-5 shadow-lg">
+                    <input type="number" id="withdraw-amount-input" placeholder="Cantidad a retirar" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none">
+                    <input type="password" id="withdraw-fund-password" placeholder="Contraseña del fondo" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none">
+                    <button onclick="executeWithdrawal()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg">Confirmar retiro</button>
+                </div>
+            </div>
+
+            <!-- VIEW 3: TAREA -->
+            <div id="view-tarea" class="space-y-4 hidden">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-lg">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span id="store-name-display" class="text-sm font-bold">Centre commercial</span>
+                            <div class="text-[11px] text-slate-500">Tâches assignées par le cloud</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] text-slate-500">valor de beneficio</div>
+                            <div class="text-sm font-bold text-amber-500">48.8%</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <div class="text-[11px] text-slate-500">Tâches en attente</div>
+                            <div id="count-pending-tasks" class="text-base font-bold text-amber-500">0</div>
+                        </div>
+                    </div>
+                    <button onclick="startGrabbingOrder()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-hand-pointer text-lg"></i>
+                        <span>Exécuter la tâche assignée</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 4: ORDEN -->
+            <div id="view-orden" class="space-y-4 hidden">
+                <h3 class="text-sm font-bold uppercase tracking-wider">Historial de pedidos</h3>
+                <div id="orders-list-container" class="space-y-3">
+                    <div class="text-center py-12 text-slate-400 text-xs">No hay pedidos realizados aún.</div>
+                </div>
+            </div>
+
+            <!-- VIEW 5: PERSONAL ("MI") -->
+            <div id="view-personal" class="space-y-4 hidden">
+                <div class="bg-gradient-to-b from-[#3b82f6] to-[#1e3a8a] text-white rounded-3xl p-6 shadow-xl space-y-5">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center text-2xl font-bold">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div>
+                            <div id="mi-username" class="text-base font-bold">Utilisateur</div>
+                            <div class="mt-2 inline-flex items-center gap-1.5 bg-amber-400 text-slate-950 px-3 py-1 rounded-full text-xs font-black">Lv0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-2.5 px-4 flex justify-around items-center z-20">
+            <button onclick="switchTab('inicio')" class="flex flex-col items-center text-blue-600"><i class="fa-solid fa-house text-lg"></i><span class="text-[10px]">inicio</span></button>
+            <button onclick="switchTab('recargar')" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-wallet text-lg"></i><span class="text-[10px]">recargar</span></button>
+            <button onclick="switchTab('tarea')" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-bag-shopping text-lg"></i><span class="text-[10px]">tarea</span></button>
+            <button onclick="switchTab('orden')" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-comments text-lg"></i><span class="text-[10px]">orden</span></button>
+            <button onclick="switchTab('personal')" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-user text-lg"></i><span class="text-[10px]">mi</span></button>
+        </div>
+    </div>
+
+    <!-- MODAL: ADMIN PASSWORD -->
+    <div id="modal-admin-pass" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4 text-center">
+            <h3 class="text-base font-bold uppercase">Accès Superviseur Sécurisé</h3>
+            <input type="password" id="admin-secret-pass-input" placeholder="Mot de passe..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-center focus:outline-none">
+            <div class="flex gap-2">
+                <button onclick="closeModal('modal-admin-pass')" class="flex-1 bg-slate-200 dark:bg-slate-800 py-3 rounded-xl text-xs font-bold">Annuler</button>
+                <button onclick="verifyAdminPassword()" class="flex-1 bg-amber-600 text-white py-3 rounded-xl text-xs font-bold">Valider</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ORDER DETAIL -->
+    <div id="modal-order-detail" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-5 space-y-4">
+            <div class="bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 text-xs p-3 font-medium rounded-xl">Veuillez régler votre commande.</div>
+            <div class="flex gap-4 items-center">
+                <img id="order-item-img" src="" class="w-20 h-20 rounded-xl object-cover bg-slate-100">
+                <div>
+                    <h4 id="order-item-title" class="text-xs font-semibold">Produit</h4>
+                    <div id="order-item-price" class="text-sm font-bold">0.00</div>
+                </div>
+            </div>
+            <button onclick="submitOrderPayment()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg text-sm">Passer la commande / Payer</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION SUPABASE OFFICIELLE
+        const SUPABASE_URL = 'https://xmgtyuurxgpbuxfybdec.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ihuLR6wtZC8l1O_glv2Zsg_ekdqK1rC';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const validRechargeCodes = ["05561147333", "05965179478", "686205865658956"];
+        const adminMasterPassword = "056417832219178162";
+
+        let currentUsername = null;
+        let currentUserData = null;
+        let adminUploadedImageBase64 = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80";
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl shadow-2xl text-xs font-semibold text-white transition-all flex items-center gap-3 ${type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('login-form');
+            const regForm = document.getElementById('register-form');
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                regForm.classList.add('hidden');
+            } else {
+                loginForm.classList.add('hidden');
+                regForm.classList.remove('hidden');
+            }
+        }
+
+        // INSCRIPTION DANS LE CLOUD SUPABASE
+        async function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+
+            const { error } = await supabaseClient.from('users').insert([{
+                username, phone, password, balance: 500.00, earnings_today: 0, earnings_total: 0, orders: [], tasks: []
+            }]);
+
+            if (error) {
+                showToast("Erreur : Ce nom existe déjà ou erreur cloud.", "error");
+                return;
+            }
+
+            showToast("Compte créé avec succès dans le cloud !", "success");
+            currentUsername = username;
+            loadUserSession(username);
+        }
+
+        // CONNEXION DEPUIS LE CLOUD SUPABASE
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('log-username').value.trim();
+            const password = document.getElementById('log-password').value.trim();
+
+            const { data, error } = await supabaseClient.from('users').select('*').eq('username', username).single();
+
+            if (error || !data || data.password !== password) {
+                showToast("Identifiants incorrects.", "error");
+                return;
+            }
+
+            currentUsername = username;
+            loadUserSession(username);
+            showToast("Connexion réussie !", "success");
+        }
+
+        async function loadUserSession(username) {
+            const { data } = await supabaseClient.from('users').select('*').eq('username', username).single();
+            if (data) {
+                currentUserData = data;
+                document.getElementById('auth-view').classList.add('hidden');
+                document.getElementById('app-view').classList.remove('hidden');
+                updateUIState();
+                switchTab('inicio');
+            }
+        }
+
+        async function refreshUserData() {
+            if (!currentUsername) return;
+            const { data } = await supabaseClient.from('users').select('*').eq('username', currentUsername).single();
+            if (data) {
+                currentUserData = data;
+                updateUIState();
+                showToast("Données actualisées depuis le cloud.", "success");
+            }
+        }
+
+        function updateUIState() {
+            if (!currentUserData) return;
+            document.querySelectorAll('#user-balance-display, #mi-balance, #withdraw-saldo-display').forEach(el => {
+                if (el) el.innerText = (currentUserData.balance || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 });
+            });
+            document.querySelectorAll('#earnings-today').forEach(el => {
+                if (el) el.innerText = (currentUserData.earnings_today || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 });
+            });
+            document.querySelectorAll('#earnings-total').forEach(el => {
+                if (el) el.innerText = (currentUserData.earnings_total || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 });
+            });
+            const pendingTasks = (currentUserData.tasks || []).length;
+            const ptEl = document.getElementById('count-pending-tasks');
+            if (ptEl) ptEl.innerText = pendingTasks;
+            
+            document.getElementById('top-username').innerText = currentUserData.username;
+            document.getElementById('mi-username').innerText = currentUserData.username;
+            renderOrdersHistory();
+        }
+
+        async function saveUserDataToCloud() {
+            await supabaseClient.from('users').update({
+                balance: currentUserData.balance,
+                earnings_today: currentUserData.earnings_today,
+                earnings_total: currentUserData.earnings_total,
+                orders: currentUserData.orders,
+                tasks: currentUserData.tasks
+            }).eq('username', currentUsername);
+        }
+
+        function logout() {
+            currentUsername = null;
+            currentUserData = null;
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+            showToast("Déconnecté.", "success");
+        }
+
+        function promptAdminAccess() { document.getElementById('modal-admin-pass').classList.remove('hidden'); }
+        function verifyAdminPassword() {
+            const pass = document.getElementById('admin-secret-pass-input').value.trim();
+            if (pass === adminMasterPassword) {
+                closeModal('modal-admin-pass');
+                switchTab('admin');
+                showToast("Panneau superviseur ouvert.", "success");
+            } else { showToast("Mot de passe incorrect.", "error"); }
+        }
+
+        // CHARGEMENT DE TOUS LES UTILISATEURS POUR L'ADMINISTRATEUR
+        async function renderAdminUsers() {
+            const container = document.getElementById('admin-users-list');
+            const { data: users, error } = await supabaseClient.from('users').select('*');
+
+            if (error || !users || users.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">Aucun utilisateur inscrit.</div>`;
+                return;
+            }
+
+            container.innerHTML = users.map(u => `
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3 shadow-sm text-xs">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white">${u.username}</h4>
+                            <div class="text-slate-500">Tél: ${u.phone || 'N/A'} • Solde: <span class="text-emerald-600 font-bold">${u.balance} FCFA</span></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <input type="number" id="admin-bal-${u.username}" placeholder="Nouveau solde" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl px-3 py-2 w-32 focus:outline-none">
+                        <button onclick="adminUpdateBalance('${u.username}')" class="bg-blue-600 text-white px-3 py-2 rounded-xl font-bold">Modifier solde</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function adminUpdateBalance(uname) {
+            const val = parseFloat(document.getElementById(`admin-bal-${uname}`).value);
+            if (isNaN(val)) return showToast("Montant invalide", "error");
+
+            await supabaseClient.from('users').update({ balance: val }).eq('username', uname);
+            showToast(`Solde de ${uname} mis à jour dans le cloud !`, "success");
+            renderAdminUsers();
+            if (uname === currentUsername) refreshUserData();
+        }
+
+        function handleAdminFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('file-chosen-label').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                adminUploadedImageBase64 = e.target.result;
+                document.getElementById('admin-img-preview').src = adminUploadedImageBase64;
+                document.getElementById('admin-img-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function adminCreateCustomTask(e) {
+            e.preventDefault();
+            const target = document.getElementById('adm-task-target').value.trim();
+            const name = document.getElementById('adm-task-name').value.trim();
+            const price = parseFloat(document.getElementById('adm-task-price').value);
+            const commission = parseFloat(document.getElementById('adm-task-comm').value);
+            const taskObj = { product: { name, price, image: adminUploadedImageBase64 }, commission };
+
+            if (target.toUpperCase() === 'ALL') {
+                const { data: users } = await supabaseClient.from('users').select('*');
+                for (let u of users) {
+                    let tasks = u.tasks || [];
+                    tasks.push(taskObj);
+                    await supabaseClient.from('users').update({ tasks }).eq('username', u.username);
+                }
+                showToast("Tâche envoyée à tous les utilisateurs !", "success");
+            } else {
+                const { data: u } = await supabaseClient.from('users').select('*').eq('username', target).single();
+                if (u) {
+                    let tasks = u.tasks || [];
+                    tasks.push(taskObj);
+                    await supabaseClient.from('users').update({ tasks }).eq('username', target);
+                    showToast(`Tâche envoyée à ${target} !`, "success");
+                } else { showToast("Utilisateur introuvable", "error"); }
+            }
+            if (currentUsername) refreshUserData();
+        }
+
+        let currentActiveOrder = null;
+        function startGrabbingOrder() {
+            if (!currentUserData.tasks || currentUserData.tasks.length === 0) {
+                return showToast("Aucune tâche en attente assignée par le superviseur.", "error");
+            }
+            const task = currentUserData.tasks.shift();
+            saveUserDataToCloud();
+            updateUIState();
+
+            currentActiveOrder = { product: task.product, commission: task.commission };
+            document.getElementById('order-item-title').innerText = task.product.name;
+            document.getElementById('order-item-img').src = task.product.image;
+            document.getElementById('order-item-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
+            document.getElementById('modal-order-detail').classList.remove('hidden');
+        }
+
+        async function submitOrderPayment() {
+            if (!currentActiveOrder) return;
+            if (currentUserData.balance < currentActiveOrder.product.price) {
+                showToast("Solde insuffisant !", "error");
+                closeModal('modal-order-detail');
+                switchTab('recargar');
+                return;
+            }
+
+            currentUserData.balance -= currentActiveOrder.product.price;
+            currentUserData.balance += (currentActiveOrder.product.price + currentActiveOrder.commission);
+            currentUserData.earnings_today += currentActiveOrder.commission;
+            currentUserData.earnings_total += currentActiveOrder.commission;
+
+            if (!currentUserData.orders) currentUserData.orders = [];
+            currentUserData.orders.unshift({ ...currentActiveOrder, date: new Date().toLocaleString() });
+
+            await saveUserDataToCloud();
+            closeModal('modal-order-detail');
+            updateUIState();
+            showToast("Tâche validée et payée avec succès !", "success");
+        }
+
+        function renderOrdersHistory() {
+            const container = document.getElementById('orders-list-container');
+            const orders = currentUserData.orders || [];
+            if (orders.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs">No hay pedidos realizados aún.</div>`;
+                return;
+            }
+            container.innerHTML = orders.map(o => `
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2 text-xs">
+                    <div class="flex justify-between"><span class="text-emerald-500 font-bold">Terminada</span><span class="text-slate-400">${o.date}</span></div>
+                    <div class="flex gap-3 items-center">
+                        <img src="${o.product.image}" class="w-12 h-12 rounded-xl object-cover">
+                        <div>
+                            <div class="font-bold">${o.product.name}</div>
+                            <div>Gain : +${o.commission} FCFA</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function confirmRecharge() {
+            const amount = parseFloat(document.getElementById('custom-recharge-input').value);
+            const code = document.getElementById('recharge-pass-code').value.trim();
+            if (!amount || amount <= 0 || !validRechargeCodes.includes(code)) {
+                return showToast("Montant ou code de recharge invalide.", "error");
+            }
+            currentUserData.balance += amount;
+            await saveUserDataToCloud();
+            updateUIState();
+            showToast("Recharge validée avec succès !", "success");
+            switchTab('inicio');
+        }
+
+        async function executeWithdrawal() {
+            const amount = parseFloat(document.getElementById('withdraw-amount-input').value);
+            if (!amount || currentUserData.balance < amount) {
+                return showToast("Solde insuffisant pour ce retrait.", "error");
+            }
+            currentUserData.balance -= amount;
+            await saveUserDataToCloud();
+            updateUIState();
+            showToast("Demande de retrait effectuée.", "success");
+            switchTab('inicio');
+        }
+
+        function switchTab(tab) {
+            ['inicio', 'recargar', 'retiro', 'tarea', 'orden', 'personal', 'admin'].forEach(t => {
+                const el = document.getElementById(`view-${t}`);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(`view-${tab}`);
+            if (target) target.classList.remove('hidden');
+            if (tab === 'admin') renderAdminUsers();
+        }
+
+        function selectStore(store) {
+            document.getElementById('store-name-display').innerText = `Centre commercial ${store}`;
+            switchTab('tarea');
+        }
+
+        function switchAdminSubTab(sub) {
+            if (sub === 'users') {
+                document.getElementById('admin-subtab-users').classList.remove('hidden');
+                document.getElementById('admin-subtab-tasks').classList.add('hidden');
+            } else {
+                document.getElementById('admin-subtab-users').classList.add('hidden');
+                document.getElementById('admin-subtab-tasks').classList.remove('hidden');
+            }
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        window.onload = function() {
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
