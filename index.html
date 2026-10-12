@@ -364,8 +364,8 @@
                     
                     <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-2 text-xs text-slate-600 dark:text-slate-400">
                         <div class="font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Consejos</div>
-                        <p>1. Comuníquese con la persona a cargo para informar la información del monto del retiro.</p>
-                        <p>2. El tiempo de retiro puede retrasarse hasta 24 horas, el tiempo específico de llegada está sujeto al banco.</p>
+                        <p>1. Comuníquese avec la persona a cargo pour informar la información del monto du retiro.</p>
+                        <p>2. El tiempo de retiro puede retrasarse hasta 24 horas, el tiempo específico de llegada está sujeto au banco.</p>
                     </div>
 
                     <button onclick="executeWithdrawal()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg">Confirmar retiro</button>
@@ -513,16 +513,20 @@
         </div>
     </div>
 
-    <!-- MODAL: SELECCIÓN DE COMERCIANTE -->
-    <div id="modal-matching" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <!-- MODAL: SELECCIÓN DE COMERCIANTE & RECHERCHE DE COMMANDE -->
+    <div id="modal-matching" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-800">
-            <div class="bg-blue-50 dark:bg-slate-950 p-6 rounded-2xl flex items-center justify-center">
-                <img src="https://cdni.iconscout.com/illustration/premium/thumb/online-shopping-store-4439185-3682782.png" alt="Selection" class="w-40 h-40 object-contain animate-bounce">
+            <div class="bg-blue-50 dark:bg-slate-950 p-6 rounded-2xl flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                <img src="https://cdni.iconscout.com/illustration/premium/thumb/online-shopping-store-4439185-3682782.png" alt="Selection" class="w-36 h-36 object-contain animate-bounce relative z-10">
             </div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wide">Selección de comerciante</h3>
-            <div class="flex items-center justify-center gap-2 text-xs text-blue-500 font-semibold">
-                <i class="fa-solid fa-spinner animate-spin"></i>
-                <span>Búsqueda de pedidos en curso...</span>
+            <div>
+                <h3 id="matching-title" class="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wide">Recherche de commande...</h3>
+                <p id="matching-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Connexion aux marchands partenaires...</p>
+            </div>
+            <div class="flex items-center justify-center gap-2 text-xs text-blue-500 font-semibold pt-1">
+                <i class="fa-solid fa-spinner animate-spin text-base"></i>
+                <span id="matching-status-text">Búsqueda de pedidos en curso...</span>
             </div>
         </div>
     </div>
@@ -706,7 +710,6 @@
         }
 
         async function saveUserDataToCloud() {
-            // Sauvegarde asynchrone instantanée sans bloquer l'interface
             supabaseClient.from('users').update({
                 balance: currentUserData.balance,
                 earnings_today: currentUserData.earnings_today,
@@ -840,20 +843,40 @@
                 return showToast("Limite atteinte ! Vous ne pouvez accomplir que 5 tâches par jour.", "error");
             }
 
-            // Affichage instantané du modal de correspondance (suppression du délai d'attente lent)
-            const task = currentUserData.tasks.shift();
-            saveUserDataToCloud();
-            updateUIState();
+            // Affichage de l'animation de recherche de commande
+            const matchingModal = document.getElementById('modal-matching');
+            const titleEl = document.getElementById('matching-title');
+            const subTitleEl = document.getElementById('matching-subtitle');
+            const statusText = document.getElementById('matching-status-text');
 
-            currentActiveOrder = { product: task.product, commission: task.commission };
-            document.getElementById('order-item-title').innerText = task.product.name;
-            document.getElementById('order-item-img').src = task.product.image;
-            document.getElementById('order-item-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
-            document.getElementById('modal-montant-total').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
-            document.getElementById('modal-montant-revenu').innerText = task.commission.toLocaleString('fr-FR') + " FCFA";
-            document.getElementById('modal-bottom-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
-            document.getElementById('modal-order-time').innerText = new Date().toLocaleString('fr-FR');
-            document.getElementById('modal-order-detail').classList.remove('hidden');
+            titleEl.innerText = "Recherche de commande...";
+            subTitleEl.innerText = "Connexion aux marchands partenaires...";
+            statusText.innerText = "Búsqueda de pedidos en curso...";
+            matchingModal.classList.remove('hidden');
+
+            // Simulation d'une recherche immersive de 1.8 secondes
+            setTimeout(() => {
+                titleEl.innerText = "Commande retrouvée !";
+                subTitleEl.innerText = "Chargement des détails du produit...";
+                statusText.innerText = "¡Pedido encontrado exitosamente!";
+
+                setTimeout(() => {
+                    matchingModal.classList.add('hidden');
+                    const task = currentUserData.tasks.shift();
+                    saveUserDataToCloud();
+                    updateUIState();
+
+                    currentActiveOrder = { product: task.product, commission: task.commission };
+                    document.getElementById('order-item-title').innerText = task.product.name;
+                    document.getElementById('order-item-img').src = task.product.image;
+                    document.getElementById('order-item-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
+                    document.getElementById('modal-montant-total').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
+                    document.getElementById('modal-montant-revenu').innerText = task.commission.toLocaleString('fr-FR') + " FCFA";
+                    document.getElementById('modal-bottom-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
+                    document.getElementById('modal-order-time').innerText = new Date().toLocaleString('fr-FR');
+                    document.getElementById('modal-order-detail').classList.remove('hidden');
+                }, 800);
+            }, 1800);
         }
 
         async function submitOrderPayment() {
