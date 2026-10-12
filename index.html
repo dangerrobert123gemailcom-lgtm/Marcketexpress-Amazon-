@@ -608,7 +608,7 @@
             toast.className = `p-4 rounded-xl shadow-2xl text-xs font-semibold text-white transition-all flex items-center gap-3 ${type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`;
             toast.innerHTML = `<span>${message}</span>`;
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            setTimeout(() => toast.remove(), 2500);
         }
 
         function switchAuthTab(tab) {
@@ -677,7 +677,6 @@
             if (data) {
                 currentUserData = data;
                 updateUIState();
-                showToast("Données actualisées depuis le cloud.", "success");
             }
         }
 
@@ -707,7 +706,8 @@
         }
 
         async function saveUserDataToCloud() {
-            await supabaseClient.from('users').update({
+            // Sauvegarde asynchrone instantanée sans bloquer l'interface
+            supabaseClient.from('users').update({
                 balance: currentUserData.balance,
                 earnings_today: currentUserData.earnings_today,
                 earnings_total: currentUserData.earnings_total,
@@ -715,7 +715,7 @@
                 tasks: currentUserData.tasks,
                 daily_completed_tasks: currentUserData.daily_completed_tasks,
                 last_task_date: currentUserData.last_task_date
-            }).eq('username', currentUsername);
+            }).eq('username', currentUsername).then(() => {});
         }
 
         function logout() {
@@ -840,24 +840,20 @@
                 return showToast("Limite atteinte ! Vous ne pouvez accomplir que 5 tâches par jour.", "error");
             }
 
-            document.getElementById('modal-matching').classList.remove('hidden');
+            // Affichage instantané du modal de correspondance (suppression du délai d'attente lent)
+            const task = currentUserData.tasks.shift();
+            saveUserDataToCloud();
+            updateUIState();
 
-            setTimeout(() => {
-                document.getElementById('modal-matching').classList.add('hidden');
-                const task = currentUserData.tasks.shift();
-                saveUserDataToCloud();
-                updateUIState();
-
-                currentActiveOrder = { product: task.product, commission: task.commission };
-                document.getElementById('order-item-title').innerText = task.product.name;
-                document.getElementById('order-item-img').src = task.product.image;
-                document.getElementById('order-item-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
-                document.getElementById('modal-montant-total').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
-                document.getElementById('modal-montant-revenu').innerText = task.commission.toLocaleString('fr-FR') + " FCFA";
-                document.getElementById('modal-bottom-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
-                document.getElementById('modal-order-time').innerText = new Date().toLocaleString('fr-FR');
-                document.getElementById('modal-order-detail').classList.remove('hidden');
-            }, 1200);
+            currentActiveOrder = { product: task.product, commission: task.commission };
+            document.getElementById('order-item-title').innerText = task.product.name;
+            document.getElementById('order-item-img').src = task.product.image;
+            document.getElementById('order-item-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
+            document.getElementById('modal-montant-total').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
+            document.getElementById('modal-montant-revenu').innerText = task.commission.toLocaleString('fr-FR') + " FCFA";
+            document.getElementById('modal-bottom-price').innerText = task.product.price.toLocaleString('fr-FR') + " FCFA";
+            document.getElementById('modal-order-time').innerText = new Date().toLocaleString('fr-FR');
+            document.getElementById('modal-order-detail').classList.remove('hidden');
         }
 
         async function submitOrderPayment() {
@@ -890,11 +886,8 @@
             await saveUserDataToCloud();
             closeModal('modal-order-detail');
             updateUIState();
-            showToast("Tâche payée avec succès ! Redirection vers vos commandes...", "success");
-
-            setTimeout(() => {
-                switchTab('orden');
-            }, 800);
+            showToast("Tâche payée avec succès !", "success");
+            switchTab('orden');
         }
 
         function showInsufficientBalanceModal(balance, needed) {
